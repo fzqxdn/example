@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<beans xmlns="http://www.springframework.org/schema/beans"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"  
+    xsi:schemaLocation="http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans.xsd  
+        http://code.alibabatech.com/schema/dubbo  
+        http://code.alibabatech.com/schema/dubbo/dubbo.xsd  
+        ">  
+  
+    <!-- consumer application name -->  
+    <dubbo:application name="consumer-of-helloworld-app11" />  
+  
+    <!-- registry address, used for consumer to discover services -->  
+    <dubbo:registry address="zookeeper://127.0.0.1:2181" />
+    
+    <dubbo:consumer timeout="5000" retries="1"/>  
+    
+    <!-- 权限校验的service -->
+    <dubbo:reference id="securityService" interface="com.cln.dubbo.user.service.SecurityService" /> 
+    
+    <!--地方查询的接口  -->
+    <dubbo:reference id="areaService" interface="com.cln.dubbo.base.service.IAreaService" />
+    
+    <!--学校,班级信息业务  -->
+    <dubbo:reference id="shbSchoolService" interface="com.cln.dubbo.base.service.IShbSchoolService" />
+     
+      <!--短信业务  -->
+    <dubbo:reference id="sentMessageService" interface="com.cln.dubbo.msg.service.ISentMessageService" />
+    
+    <!-- 短信推送业务类 -->
+    <dubbo:reference id="shbPushSetService" interface="com.cln.dubbo.msg.service.IShbPushSetService" />
+    
+    <!-- 学生认证业务类 -->
+    <dubbo:reference id="attStudentService" interface="com.cln.dubbo.bi.service.schoolBus.IAttStudentService" />
+    
+    <!-- 学校套餐设置 -->
+    <dubbo:reference id="shbSetmenuService" interface="com.cln.dubbo.bi.service.schoolBus.IShbSetmenuService" />
+    <!-- 用户模块 -->
+    <dubbo:reference id="userService" interface="com.cln.dubbo.user.service.UserService" />
+    
+    <!-- 文件上传 -->
+    <dubbo:reference id="fileUploadService" interface="com.cln.dubbo.user.service.FileUploadService" /> 
+    <!-- 实时公交业务-->
+    <dubbo:reference id="busInfoService" interface="com.cln.dubbo.bus.service.IBusInfoService" />
+    
+    <!-- 推送消息获取类-->
+    <dubbo:reference id="shbPushMsgService" interface="com.cln.dubbo.msg.service.IShbPushMsgService" />
+
+	<!-- 路线处理service -->
+	<dubbo:reference id="lineRoadService" interface="com.cln.dubbo.management.service.ILineRoadService" /> 
+	
+	<!-- 路线处理service -->
+	<dubbo:reference id="webChatService" interface="com.cln.dubbo.msg.service.IWebChatService" />  
+	
+	<!-- 路线处理service -->
+	<dubbo:reference id="appActivityService" interface="com.cln.dubbo.base.service.IAppActivityService" /> 
+	
+	<!-- 微信公众号登陆 -->
+	<dubbo:reference id="weChatLoginService" interface="com.cln.dubbo.user.service.IWeChatLoginService" />
+	  
+	<!-- 支付service -->
+	<dubbo:reference id="busDataService" interface="com.cln.trans.service.IBusDataService" /> 
+	  
+</beans> 
