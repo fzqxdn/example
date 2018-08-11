@@ -1,0 +1,405 @@
+package com.cln.handler;
+
+import java.net.InetSocketAddress;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.alibaba.fastjson.JSONObject;
+import com.cln.common.util.CommonUtils;
+import com.cln.dubbo.base.service.IAppActivityService;
+import com.cln.dubbo.base.service.IAreaService;
+import com.cln.dubbo.base.service.IShbSchoolService;
+import com.cln.dubbo.bi.service.schoolBus.IAttStudentService;
+import com.cln.dubbo.bi.service.schoolBus.IShbSetmenuService;
+import com.cln.dubbo.bus.service.IBusInfoService;
+import com.cln.dubbo.client.ServiceBeanUtils;
+import com.cln.dubbo.common.util.SysLog;
+import com.cln.dubbo.constant.SchBusRespCode;
+import com.cln.dubbo.management.service.ILineRoadService;
+import com.cln.dubbo.model.CardCloudResult;
+import com.cln.dubbo.msg.service.ISentMessageService;
+import com.cln.dubbo.msg.service.IShbPushMsgService;
+import com.cln.dubbo.msg.service.IShbPushSetService;
+import com.cln.dubbo.user.service.FileUploadService;
+import com.cln.dubbo.user.service.IWeChatLoginService;
+import com.cln.dubbo.user.service.SecurityService;
+import com.cln.dubbo.user.service.UserService;
+import com.cln.service.intercepter.Intercepter;
+import com.cln.trans.service.IBusDataService;
+import com.cln.ws.ChannelHandler;
+
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+
+/**
+ * 
+ * @author yxb
+ * @date 2018-6-28
+ * @desc 网关业务处理类
+ *
+ */
+public class BusiHandler {
+	private static Logger log = Logger.getLogger(BusiHandler.class.getName());
+	
+	/**
+	 * 根据cmd进行处理
+	 * 
+	 * @param jMsg
+	 * @param ctx
+	 */
+	public static void doHandler(JSONObject jMsg, ChannelHandlerContext ctx, String userName)
+	{
+		// 获取命令码
+		String cmd = jMsg.getString("cmd");
+		// 参数
+		String param = jMsg.toJSONString();
+		// 返回码
+		String retCode = "2";
+		// 响应给前端
+		String reData = null;
+		try
+		{
+			JSONObject data=(JSONObject)jMsg.get("data");
+			InetSocketAddress insocket = (InetSocketAddress)ctx.channel().remoteAddress();
+			data.put("clientIp", insocket.getAddress().getHostAddress());
+			// 对接口进行分发处理
+			if (StringUtils.isNotEmpty(cmd))
+			{
+				reData = serviceHandel(cmd.trim(), jMsg);
+			}
+
+			if (reData != null)
+			{
+				SysLog.info("*******前端传过来参数******" + param);
+				SysLog.info("*******业务处理结果*******" + reData);
+				log.info("****************服务器发送消息****************channelId=" + ctx.channel().id().asLongText()+ ",userName=" + userName);
+				ctx.channel().writeAndFlush(new TextWebSocketFrame(reData));
+			}
+			else
+			{
+				ChannelHandler.sendErrorRsp(ctx, cmd, retCode, userName, jMsg);
+			}
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+			log.error("XXXXXXXXXXXXXXXXXXXXXXXXXdoHandler业务处理失败(cmd=" + cmd + ",userName=" + userName + ",channelId="+ ctx.channel().id().asLongText() + ",retCode=" + retCode + "):" + ex.getMessage());
+			ChannelHandler.sendErrorRsp(ctx, cmd, retCode, userName, jMsg);
+		}
+	}
+
+	/**
+	 * Title: resultHandel Description:将结果转成String返回给前端
+	 * 
+	 * @param selectAllProvince
+	 * @return
+	 */
+	private static String resultHandel(JSONObject jMsg, String cmd, CardCloudResult cardCloudResult) {
+		// 返回标识
+		jMsg.put("cmd", cmd.substring(0, cmd.length() - 1).concat("2"));
+		// 响应状态
+		jMsg.put("status", String.valueOf(cardCloudResult.getStatus()));
+		// 响应信息
+		jMsg.put("msg", cardCloudResult.getMsg());
+		// 响应给前端
+		jMsg.put("data", cardCloudResult);
+		return jMsg.toJSONString();
+	}
+
+	/**
+	 * Title: serviceHandel Description:各个业务处理类
+	 * 
+	 * @param cmd
+	 * @param jMsg
+	 * @return
+	 */
+	public static String serviceHandel(String cmd, JSONObject jMsg)
+	{
+		// service返回结果
+		CardCloudResult cardCloudResult = null;
+		// 参数json
+		JSONObject param = jMsg.getJSONObject("data");
+		// 3,权限校验
+		// 3.1,单点登录验证
+		CardCloudResult signalLogin = Intercepter.signalLogin(jMsg);
+		if (!"200".equals(String.valueOf(signalLogin.getStatus())))
+		{
+			return resultHandel(jMsg, cmd, signalLogin);
+		}
+		// 3.2,token权限验证
+		CardCloudResult authChek = Intercepter.authChek(jMsg);
+		if (!"200".equals(String.valueOf(authChek.getStatus())))
+		{
+			return resultHandel(jMsg, cmd, authChek);
+		}
+		// 登录
+		if ("1001011".trim().equals(cmd))
+		{
+			UserService userService = ServiceBeanUtils.getUserService();
+			cardCloudResult = userService.UserLogin(param);
+		}
+		// 注册
+		else if ("1002021".trim().equals(cmd))
+		{
+			UserService userService = ServiceBeanUtils.getUserService();
+			cardCloudResult = userService.registerUser(param);
+		}
+		// 密码找回
+		else if ("1003031".trim().equals(cmd))
+		{
+			String phone = String.valueOf(param.get("phone"));
+			String msgCode = String.valueOf(param.get("msgCode"));
+			String pasword = String.valueOf(param.get("password"));
+			UserService userService = ServiceBeanUtils.getUserService();
+			cardCloudResult = userService.backPwd(phone, msgCode, pasword);
+		}
+		// 修改密码
+		else if ("1004041".trim().equals(cmd))
+		{
+			String userid = param.getString("userid");
+			String oldPwd = param.getString("oldPwd");
+			String pasword = param.getString("pasword");
+			UserService userService = ServiceBeanUtils.getUserService();
+			cardCloudResult = userService.updatePwd(Integer.parseInt(userid), oldPwd, pasword);
+		}
+		// 修改用户基信息
+		else if ("1105051".trim().equals(cmd))
+		{
+			UserService userService = ServiceBeanUtils.getUserService();
+			cardCloudResult = userService.updateUserInfoBypramarKey(param);
+		}
+		// 图片上传
+		else if ("1101011".trim().equals(cmd))
+		{
+			String modName = param.getString("modName");
+			String fileType = param.getString("fileType");
+			String fileContent = param.getString("fileContent");
+			FileUploadService fileUploadService = ServiceBeanUtils.getFileUploadService();
+			cardCloudResult = fileUploadService.uploadFileBase(modName, fileType, fileContent);
+		}
+		// 1.获取所有的省份
+		else if ("1401011".trim().equals(cmd))
+		{
+
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult = areaService.selectAllProvince(param);
+		}
+		// 2.选择市
+		else if ("1401021".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult = areaService.selectAllCityByPro(param);
+		}
+		// 3.选择区
+		else if ("1401031".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult = areaService.selectAllAreasByCity(param);
+		}
+		// 4.选择街道
+		else if ("1401041".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult = areaService.selectAllStreatsByArea(param);
+		}
+		// 5. 选择学校
+		else if ("1401051".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult = areaService.selectAllSchoolByStreet(param);
+		}
+		// 6.学校路线和站点数量
+		else if ("1401061".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult = areaService.selectLinesBySchool(param);
+		}
+		// 7.选择学校站点
+		else if ("1401071".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult = areaService.selectSitesByLine(param);
+		}
+		// 8.选择所有学校
+		else if ("1402011".trim().equals(cmd))
+		{
+			IShbSchoolService shbSchoolService = ServiceBeanUtils.getIShbSchoolService();
+			cardCloudResult = shbSchoolService.selectAllSchools(param);
+		}
+		// 9.选择学校班级
+		else if ("1402021".trim().equals(cmd))
+		{
+			IShbSchoolService shbSchoolService = ServiceBeanUtils.getIShbSchoolService();
+			cardCloudResult = shbSchoolService.selectAllClassBySchool(param);
+		}
+		// 10.短信验证
+		else if ("1601011".trim().equals(cmd))
+		{
+			ISentMessageService sentMessageService = ServiceBeanUtils.getISentMessageService();
+			cardCloudResult = sentMessageService.sentMessage(param);
+		}
+		// 11.查询消息推送设置
+		else if ("1602011".trim().equals(cmd))
+		{
+			IShbPushSetService shbPushSetService = ServiceBeanUtils.getIShbPushSetService();
+			cardCloudResult = shbPushSetService.selectMsgSet(param);
+		}
+		// 11.消息内容通知设置
+		else if ("1603011".trim().equals(cmd))
+		{
+			IShbPushSetService shbPushSetService = ServiceBeanUtils.getIShbPushSetService();
+			cardCloudResult = shbPushSetService.updateShbPushSet(param);
+		}
+		// 12.消息推送方式设置
+		else if ("1604011".trim().equals(cmd))
+		{
+			IShbPushSetService shbPushSetService = ServiceBeanUtils.getIShbPushSetService();
+			cardCloudResult = shbPushSetService.updateShbPushSet(param);
+		}
+		// 13.到站时间提醒设置
+		else if ("1605011".trim().equals(cmd))
+		{
+			IShbPushSetService shbPushSetService = ServiceBeanUtils.getIShbPushSetService();
+			cardCloudResult = shbPushSetService.updateShbPushSet(param);
+		}
+		// 14.认证信息提交
+		else if ("2001011".trim().equals(cmd))
+		{
+			IAttStudentService attStudentService = ServiceBeanUtils.getIAttStudentService();
+			cardCloudResult = attStudentService.insertShbParent(param);
+		}
+		// 15.套餐列表
+		else if ("2002011".trim().equals(cmd))
+		{
+			IShbSetmenuService shbSetmenuService = ServiceBeanUtils.getIShbSetmenuService();
+			cardCloudResult = shbSetmenuService.selectShbSetmenuList(param);
+		}
+		// 16.套餐订购-套餐下订单
+		else if ("2002021".trim().equals(cmd))
+		{
+			IShbSetmenuService shbSetmenuService = ServiceBeanUtils.getIShbSetmenuService();
+			cardCloudResult = shbSetmenuService.submitMenu(param);
+		}
+		// 17.历史交易明细
+		else if ("2003011".trim().equals(cmd))
+		{
+			IShbSetmenuService shbSetmenuService = ServiceBeanUtils.getIShbSetmenuService();
+			cardCloudResult = shbSetmenuService.selectMenuList(param);
+		}
+		// 18.我的套餐-当前有效套餐
+		else if ("2003021".trim().equals(cmd))
+		{
+			IShbSetmenuService shbSetmenuService = ServiceBeanUtils.getIShbSetmenuService();
+			cardCloudResult = shbSetmenuService.selectEffectiveMenuList(param);
+		}
+		// 19.获取实时公交数据
+		else if ("1701011".trim().equals(cmd))
+		{
+			IBusInfoService busInfoService = ServiceBeanUtils.getIBusInfoService();
+			cardCloudResult = busInfoService.getBusListByStationName(param);
+		}
+		// 20.通过刷新token获取权限token
+		else if ("1006011".trim().equals(cmd))
+		{
+			SecurityService securityService = ServiceBeanUtils.getSecurityService();
+			cardCloudResult = securityService.getAccessTokenByRefresh(param);
+		}
+		// 21.模糊查询,选择站点
+		else if ("1403011".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult = areaService.selectLinesBySchool(param);
+		}
+		//查询常用路线
+		else if ("1403021".trim().equals(cmd))
+		{
+			ILineRoadService lineRoadService = ServiceBeanUtils.getILineRoadService();
+			cardCloudResult=lineRoadService.selectCommonlyLines(param);
+		}
+		//学生认证时,选择地址
+		else if ("1402031".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult=areaService.selectProCityArea(param);
+		}
+		//根据定位城市名,选择区
+		else if ("1401081".trim().equals(cmd))
+		{
+			IAreaService areaService = ServiceBeanUtils.getIAreaService();
+			cardCloudResult=areaService.selectAreaByCityName(param);
+		}
+		//根据定位城市名,选择区
+		else if ("1404011".trim().equals(cmd))
+		{
+			IAppActivityService appActivityService = ServiceBeanUtils.getIAppActivityService();
+			cardCloudResult=appActivityService.selectAppActivity(param);
+		}
+		//查询该用户的所有消息列表
+		else if ("1606011".trim().equals(cmd))
+		{
+			IShbPushMsgService pushMsgService = ServiceBeanUtils.getIShbPushMsgService();
+			cardCloudResult=pushMsgService.selectPushMsgList(param);
+		}
+		//添加重用路线
+		else if ("1403031".trim().equals(cmd))
+		{
+			ILineRoadService lineRoadService = ServiceBeanUtils.getILineRoadService();
+			cardCloudResult=lineRoadService.insertCommonlines(param);
+		}
+		//添加重用路线
+		else if ("1403041".trim().equals(cmd))
+		{
+			ILineRoadService lineRoadService = ServiceBeanUtils.getILineRoadService();
+			cardCloudResult=lineRoadService.deleteCommonlines(param);
+		}
+		//消息推送成功后,回调接口
+		else if ("1607011".trim().equals(cmd))
+		{
+			IShbPushMsgService pushMsgService = ServiceBeanUtils.getIShbPushMsgService();
+			cardCloudResult=pushMsgService.insertPushMsgLog(param);
+		}
+		//查询重用路线的站点信息
+		else if ("1403051".trim().equals(cmd))
+		{
+			ILineRoadService lineRoadService = ServiceBeanUtils.getILineRoadService();
+			cardCloudResult=lineRoadService.selectCommonStation(param);
+		}
+		//查询是否学生认证
+		else if ("1007011".trim().equals(cmd))
+		{
+			UserService userService = ServiceBeanUtils.getUserService();
+			cardCloudResult = userService.checkisAuth(param);
+		}
+		//查询是否学生认证
+		else if ("1001021".trim().equals(cmd))
+		{
+			IWeChatLoginService weChatLoginService = ServiceBeanUtils.getIWeChatLoginService();
+			cardCloudResult = weChatLoginService.weChatCallBack(param);
+		}
+		//支付
+		//微信公众号支付
+		else if ("120104011".trim().equals(cmd))
+		{
+			System.out.println("starting...**************************************");
+			try
+			{
+				IBusDataService busDataService = ServiceBeanUtils.getBusDataService();
+				net.sf.json.JSONObject data=net.sf.json.JSONObject.fromObject(param);
+				
+				net.sf.json.JSONObject retMsg=busDataService.wxPubNumPayData(data);
+				cardCloudResult=CardCloudResult.build(retMsg.getInt("status"),retMsg.getString("msg"),retMsg.get("data"));
+			} 
+			catch (Exception e)
+			{
+				cardCloudResult = CardCloudResult.build(SchBusRespCode.BUS_ERROR_CODE_9001.getCode(),SchBusRespCode.BUS_ERROR_CODE_9001.getDesc());
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			cardCloudResult = CardCloudResult.build(SchBusRespCode.BUS_ERROR_CODE_9000.getCode(),SchBusRespCode.BUS_ERROR_CODE_9000.getDesc());
+		}
+		return resultHandel(jMsg, cmd, cardCloudResult);
+	}
+}

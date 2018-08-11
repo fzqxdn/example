@@ -1,0 +1,448 @@
+package com.cln.dubbo.client;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.cln.dubbo.base.service.IAppActivityService;
+import com.cln.dubbo.base.service.IAreaService;
+import com.cln.dubbo.base.service.IShbSchoolService;
+import com.cln.dubbo.bi.service.schoolBus.IAttStudentService;
+import com.cln.dubbo.bi.service.schoolBus.IShbSetmenuService;
+import com.cln.dubbo.bus.service.IBusInfoService;
+import com.cln.dubbo.bus.service.IGpsUploadService;
+import com.cln.dubbo.management.service.ILineRoadService;
+import com.cln.dubbo.msg.service.ISentMessageService;
+import com.cln.dubbo.msg.service.IShbPushMsgService;
+import com.cln.dubbo.msg.service.IShbPushSetService;
+import com.cln.dubbo.msg.service.IWebChatService;
+import com.cln.dubbo.user.service.FileUploadService;
+import com.cln.dubbo.user.service.IWeChatLoginService;
+import com.cln.dubbo.user.service.SecurityService;
+import com.cln.dubbo.user.service.UserService;
+import com.cln.trans.service.IBusDataService;
+
+
+
+public class ServiceBeanUtils
+{
+	public static boolean flag = false;
+	
+	public static ClassPathXmlApplicationContext contexttt = getContext();
+	
+	private static IAreaService areaService = null;
+	
+	private static SecurityService securityService =null;
+
+	private static IShbSchoolService shbSchoolService = null;
+	
+	private static ISentMessageService sentMessageService = null;
+	
+	private static IShbPushSetService shbPushSetService = null;
+	
+	private static IAttStudentService attStudentService = null;
+	
+	private static IShbSetmenuService shbSetmenuService = null;
+	
+	private static UserService userService =null;
+
+	private static IBusInfoService busInfoService = null;
+
+	private static IShbPushMsgService shbPushMsgService = null;
+
+	private static FileUploadService fileUploadService =null;
+	
+	private static ILineRoadService lineRoadService =null;
+	
+	private static IWebChatService webChatService = null;
+	
+	private static IAppActivityService appActivityService = null;
+	
+	private static IGpsUploadService gpsUploadService = null;
+	
+	private static IWeChatLoginService weChatLoginService = null;
+	private static IBusDataService busDataService = null;
+
+	/**
+	 * 获取配置
+	 * @return
+	 */
+	public static ClassPathXmlApplicationContext getContext()
+	{
+		ClassPathXmlApplicationContext context = null;
+		Lock lock = new ReentrantLock();
+		
+		if(contexttt == null)
+		{
+			lock.lock();
+			if(contexttt == null)
+			{
+				context = new ClassPathXmlApplicationContext(new String[]{ "applicationConsumer.xml" });
+				context.start();
+				contexttt = context;
+			}
+			lock.unlock();
+		}
+		
+		return contexttt;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:获取省,市,区,街道处理类
+	 * @return
+	 */
+	public static IGpsUploadService getIGpsUploadService()
+	{
+		Lock lock = new ReentrantLock();
+		if(gpsUploadService == null)
+		{
+			lock.lock();
+			
+			if(gpsUploadService == null)
+			{
+				gpsUploadService = (IGpsUploadService) contexttt.getBean("gpsUploadService");
+			}
+			lock.unlock();
+		}
+		return gpsUploadService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:获取省,市,区,街道处理类
+	 * @return
+	 */
+	public static IAppActivityService getIAppActivityService()
+	{
+		Lock lock = new ReentrantLock();
+		if(appActivityService == null)
+		{
+			lock.lock();
+			
+			if(webChatService == null)
+			{
+				appActivityService = (IAppActivityService) contexttt.getBean("appActivityService");
+			}
+			lock.unlock();
+		}
+		return appActivityService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:获取省,市,区,街道处理类
+	 * @return
+	 */
+	public static IWebChatService getIWebChatService()
+	{
+		Lock lock = new ReentrantLock();
+		if(webChatService == null)
+		{
+			lock.lock();
+			
+			if(webChatService == null)
+			{
+				webChatService = (IWebChatService) contexttt.getBean("webChatService");
+			}
+			lock.unlock();
+		}
+		return webChatService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:获取省,市,区,街道处理类
+	 * @return
+	 */
+	public static ILineRoadService getILineRoadService()
+	{
+		Lock lock = new ReentrantLock();
+		if(lineRoadService == null)
+		{
+			lock.lock();
+			
+			if(lineRoadService == null)
+			{
+				lineRoadService = (ILineRoadService) contexttt.getBean("lineRoadService");
+			}
+			lock.unlock();
+		}
+		return lineRoadService;
+	}
+
+	/**获取类*/
+	public static IBusDataService getBusDataService()
+	{
+		Lock lock = new ReentrantLock();
+		if(busDataService == null)
+		{
+			lock.lock();
+			
+			if(busDataService == null)
+			{
+				busDataService = (IBusDataService) contexttt.getBean("busDataService");
+			}
+			lock.unlock();
+		}
+		return busDataService;
+	}
+	/**
+	 * Title: getIAreaService
+	 * Description:获取省,市,区,街道处理类
+	 * @return
+	 */
+	public static IShbPushMsgService getIShbPushMsgService()
+	{
+		Lock lock = new ReentrantLock();
+		if(shbPushMsgService == null)
+		{
+			lock.lock();
+			
+			if(shbPushMsgService == null)
+			{
+				shbPushMsgService = (IShbPushMsgService) contexttt.getBean("shbPushMsgService");
+			}
+			lock.unlock();
+		}
+		return shbPushMsgService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:消息推送消息类
+	 * @return
+	 */
+	public static IAreaService getIAreaService()
+	{
+		Lock lock = new ReentrantLock();
+		if(areaService == null)
+		{
+			lock.lock();
+			
+			if(areaService == null)
+			{
+				areaService = (IAreaService) contexttt.getBean("areaService");
+			}
+			lock.unlock();
+		}
+		return areaService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:获取权限验证的处理类
+	 * @return
+	 */
+	public static SecurityService getSecurityService()
+	{
+		Lock lock = new ReentrantLock();
+		if(securityService == null)
+		{
+			lock.lock();
+			
+			if(securityService == null)
+			{
+				securityService = (SecurityService) contexttt.getBean("securityService");
+			}
+			lock.unlock();
+		}
+		return securityService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:学校,班级信息业务
+	 * @return
+	 */
+	public static IShbSchoolService getIShbSchoolService()
+	{
+		Lock lock = new ReentrantLock();
+		if(shbSchoolService == null)
+		{
+			lock.lock();
+			if(shbSchoolService == null)
+			{
+				shbSchoolService = (IShbSchoolService) contexttt.getBean("shbSchoolService");
+			}
+			lock.unlock();
+		}
+		return shbSchoolService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:短信业务
+	 * @return
+	 */
+	public static ISentMessageService getISentMessageService()
+	{
+		Lock lock = new ReentrantLock();
+		if(sentMessageService == null)
+		{
+			lock.lock();
+			if(sentMessageService == null)
+			{
+				sentMessageService = (ISentMessageService) contexttt.getBean("sentMessageService");
+			}
+			lock.unlock();
+		}
+		return sentMessageService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:短信推送业务类
+	 * @return
+	 */
+	public static IShbPushSetService getIShbPushSetService()
+	{
+		Lock lock = new ReentrantLock();
+		if(shbPushSetService == null)
+		{
+			lock.lock();
+			if(shbPushSetService == null)
+			{
+				shbPushSetService = (IShbPushSetService) contexttt.getBean("shbPushSetService");
+			}
+			lock.unlock();
+		}
+		return shbPushSetService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:学生认证业务类
+	 * @return
+	 */
+	public static IAttStudentService getIAttStudentService()
+	{
+		Lock lock = new ReentrantLock();
+		if(attStudentService == null)
+		{
+			lock.lock();
+			if(attStudentService == null)
+			{
+				attStudentService = (IAttStudentService) contexttt.getBean("attStudentService");
+			}
+			lock.unlock();
+		}
+		return attStudentService;
+	}
+	
+	/**
+	 * Title: getIAreaService
+	 * Description:学校套餐设置
+	 * @return
+	 */
+	public static IShbSetmenuService getIShbSetmenuService()
+	{
+		Lock lock = new ReentrantLock();
+		if(shbSetmenuService == null)
+		{
+			lock.lock();
+			if(shbSetmenuService == null)
+			{
+				shbSetmenuService = (IShbSetmenuService) contexttt.getBean("shbSetmenuService");
+			}
+			lock.unlock();
+		}
+		return shbSetmenuService;
+	}
+	
+	 /**
+	  *  用户模块
+	  * @return
+	  */
+	 public static IWeChatLoginService getIWeChatLoginService(){
+		   
+		 Lock lock = new ReentrantLock();
+		 
+		 if(weChatLoginService ==null){
+			 
+			 lock .lock();
+			 
+			 if(weChatLoginService ==null){
+				 
+				 weChatLoginService =(IWeChatLoginService) contexttt.getBean("weChatLoginService");
+			 }
+			 
+			 lock.unlock();
+		 }
+		 
+		return weChatLoginService;		 
+		 
+	 }	
+	
+
+	 /**
+	  *  用户模块
+	  * @return
+	  */
+	 public static UserService getUserService(){
+		   
+		 Lock lock = new ReentrantLock();
+		 
+		 if(userService ==null){
+			 
+			 lock .lock();
+			 
+			 if(userService ==null){
+				 
+				 userService =(UserService) contexttt.getBean("userService");
+			 }
+			 
+			 lock.unlock();
+		 }
+		 
+		return userService;		 
+		 
+	 }	
+	 
+	 /**
+	  * 文件上传base64
+	  * @return
+	  */
+	 public static FileUploadService getFileUploadService(){
+		  
+		 Lock lock = new ReentrantLock();
+		  
+		 if(fileUploadService ==null){
+			 
+			 lock.lock();
+			 if(fileUploadService ==null){
+				 
+				 fileUploadService = (FileUploadService) contexttt.getBean("fileUploadService");
+			 }
+			 lock.unlock();
+			 
+		 }
+		    
+		return fileUploadService;
+		 
+		 
+		 
+	 }
+
+	/**
+	 * Title: getIAreaService
+	 * Description:学校套餐设置
+	 * @return
+	 */
+	public static IBusInfoService getIBusInfoService()
+	{
+		Lock lock = new ReentrantLock();
+		if(busInfoService == null)
+		{
+			lock.lock();
+			if(busInfoService == null)
+			{
+				busInfoService = (IBusInfoService) contexttt.getBean("busInfoService");
+			}
+			lock.unlock();
+		}
+		return busInfoService;
+	}
+	
+}

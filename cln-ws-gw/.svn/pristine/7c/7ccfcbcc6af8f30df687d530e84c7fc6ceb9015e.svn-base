@@ -1,0 +1,15 @@
+server.port=8899
+
+#redis_dbindex=2
+#redis_host=120.77.61.17
+#redis.cluster.auth=YTtSm$8#cd$Z3V@C
+
+redis_host=172.0.13.242
+redis.cluster.auth=cardlan@2017
+redis_port=6379
+redis_timeout=300
+
+#\u4e0d\u9700\u8981\u8fdb\u884c\u6821\u9a8c\u7684\u8def\u5f84,\u591a\u4e2a\u63a5\u53e3\u4ee5\u82f1\u6587\u9017\u53f7\u9694\u5f00,
+exclude-mapping=1001011,1002021,1003031,1601011,1006011,1001021
+#\u63a8\u9001\u6d88\u606f\u7684\u65f6\u95f4\u95f4\u9694,\u5355\u4f4d\u6beb\u79d2.\u4e0d\u586b\u6216-1,\u4e0d\u6267\u884c\u5b9a\u65f6\u4efb\u52a1
+sentPushMsg-interval=5000
